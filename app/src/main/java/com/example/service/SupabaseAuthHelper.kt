@@ -258,17 +258,26 @@ object SupabaseAuthHelper {
             }
         } catch (e: GetCredentialCancellationException) {
             Log.d(TAG, "Google Sign-In was cancelled by user")
-            Result.failure(Exception("Login cancelado pelo usuário."))
+            Result.failure(Exception("Login cancelado."))
         } catch (e: NoCredentialException) {
             Log.w(TAG, "No credentials available on device: ${e.message}")
             Result.failure(
                 Exception(
-                    "Nenhuma conta Google encontrada no aparelho. Cadastre-se ou entre com E-mail e Senha abaixo."
+                    "Nenhuma conta Google ativa ou encontrada no aparelho. Você também pode entrar com E-mail e Senha abaixo."
                 )
             )
         } catch (e: GetCredentialException) {
             Log.e(TAG, "Google Sign-In failed: ${e.message}", e)
-            Result.failure(Exception("Falha ao autenticar Google: ${e.localizedMessage}"))
+            val msg = e.localizedMessage ?: e.message ?: ""
+            val userFriendlyMsg = when {
+                msg.contains("10") || msg.contains("Developer") || msg.contains("16") ->
+                    "Configuração do Google pendente: Verifique se o SHA-1 e o pacote (com.aistudio.caradepacoca.obrefs) estão cadastrados no Google Cloud Console ou use E-mail e Senha abaixo."
+                msg.contains("Canceled") || msg.contains("cancelled") ->
+                    "Login cancelado."
+                else ->
+                    "Falha no Google Sign-In: $msg"
+            }
+            Result.failure(Exception(userFriendlyMsg))
         } catch (e: Exception) {
             Log.e(TAG, "Auth exception: ${e.message}", e)
             Result.failure(e)
