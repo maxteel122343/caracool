@@ -119,64 +119,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val isKool = settings.isCaraDeKoolMode
         val isToday = period == "today"
 
-        // Base community members
-        val communitySeed = listOf(
-            RankedUser(
-                name = "Mariana Paçoca",
-                avatarEmoji = "🥜",
-                photoUri = null,
-                unlockCount = if (isToday) 28 else 342,
-                badgeTitle = "Mestre Paçoca 👑",
-                isCurrentUser = false,
-                isKool = false
-            ),
-            RankedUser(
-                name = "Lucas Silva",
-                avatarEmoji = "🚀",
-                photoUri = null,
-                unlockCount = if (isToday) 22 else 289,
-                badgeTitle = "Desbloqueador Pro 🔥",
-                isCurrentUser = false,
-                isKool = false
-            ),
-            RankedUser(
-                name = "Beatriz Kawaii",
-                avatarEmoji = "✨",
-                photoUri = null,
-                unlockCount = if (isToday) 19 else 245,
-                badgeTitle = "Top Membro ✨",
-                isCurrentUser = false,
-                isKool = false
-            ),
-            RankedUser(
-                name = "Gabriel Gamer",
-                avatarEmoji = "🎮",
-                photoUri = null,
-                unlockCount = if (isToday) 15 else 198,
-                badgeTitle = "Gamer Ativo ⚡",
-                isCurrentUser = false,
-                isKool = false
-            ),
-            RankedUser(
-                name = "Camila Tardígrado",
-                avatarEmoji = "👾",
-                photoUri = null,
-                unlockCount = if (isToday) 12 else 176,
-                badgeTitle = "Cara de Cu Fan 👾",
-                isCurrentUser = false,
-                isKool = true
-            ),
-            RankedUser(
-                name = "Rodrigo Santos",
-                avatarEmoji = "😎",
-                photoUri = null,
-                unlockCount = if (isToday) 8 else 120,
-                badgeTitle = "Amante da Paçoca 🥜",
-                isCurrentUser = false,
-                isKool = false
-            )
-        )
-
         val userList = mutableListOf<RankedUser>()
 
         // 1. Current user
@@ -191,12 +133,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             photoUri = userPhoto,
             unlockCount = userUnlock,
             isCurrentUser = true,
-            badgeTitle = if (isKool) "Meu Perfil Cu 👾" else "Meu Perfil 🥜",
+            badgeTitle = if (isKool) "Meu Perfil" else "Meu Perfil",
             isKool = isKool
         )
         userList.add(currentUserEntry)
 
-        // 2. Community posts from Feed / Cloud
+        // 2. Real Community posts from Feed / Cloud (No fake bots)
         val groupedByAuthor = posts.filter { !it.isUserPost && it.authorName.isNotBlank() }
             .groupBy { it.authorName }
 
@@ -204,25 +146,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val maxUnlock = authorPosts.maxOfOrNull { it.unlockCount } ?: 1
             val firstPost = authorPosts.first()
             val adjustedCount = if (isToday) maxUnlock else maxUnlock * 7 + 10
-            val isAuthorKool = firstPost.themeTag.contains("Kool", ignoreCase = true) || firstPost.themeTag.contains("Cu", ignoreCase = true) || firstPost.authorAvatarEmoji == "👾"
+            val isAuthorKool = firstPost.themeTag.contains("Kool", ignoreCase = true) || firstPost.themeTag.contains("Cu", ignoreCase = true)
             userList.add(
                 RankedUser(
                     name = author,
-                    avatarEmoji = firstPost.authorAvatarEmoji.ifBlank { if (isAuthorKool) "👾" else "🥜" },
+                    avatarEmoji = firstPost.authorAvatarEmoji.ifBlank { "👤" },
                     photoUri = firstPost.authorAvatarUri ?: firstPost.photoUri,
                     unlockCount = adjustedCount,
                     isCurrentUser = false,
-                    badgeTitle = if (isAuthorKool) "Comunidade Cu 👾" else "Comunidade Paçoca 🥜",
+                    badgeTitle = "Membro da Comunidade",
                     isKool = isAuthorKool
                 )
             )
-        }
-
-        // 3. Add seed users if not already present
-        for (seed in communitySeed) {
-            if (userList.none { it.name.equals(seed.name, ignoreCase = true) }) {
-                userList.add(seed)
-            }
         }
 
         // Sort descending by unlockCount and assign rank numbers
@@ -230,9 +165,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return sorted.mapIndexed { index, item ->
             val rankNum = index + 1
             val dynamicBadge = when (rankNum) {
-                1 -> if (isKool) "Rei do Cu 👑👾" else "Rei da Paçoca 👑🥜"
-                2 -> if (isKool) "Vice-Campeão Cu 🥈" else "Vice-Campeão Paçoca 🥈"
-                3 -> if (isKool) "Bronze Supremo 🥉" else "Bronze Paçoca 🥉"
+                1 -> "1º Lugar"
+                2 -> "2º Lugar"
+                3 -> "3º Lugar"
                 else -> item.badgeTitle
             }
             item.copy(rank = rankNum, badgeTitle = dynamicBadge)

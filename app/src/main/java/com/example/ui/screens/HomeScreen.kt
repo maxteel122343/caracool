@@ -89,6 +89,8 @@ import com.example.ui.components.TutorialGuideDialog
 import com.example.ui.components.UserProfileDialog
 import com.example.ui.components.WallpaperRenderer
 import com.example.ui.components.TardigradeMascotIcon
+import com.example.ui.components.DownloadApkDialog
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudQueue
@@ -127,6 +129,7 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showProfileDialog by remember { mutableStateOf(false) }
     var showAuthDialog by remember { mutableStateOf(false) }
+    var showDownloadApkDialog by remember { mutableStateOf(false) }
     var showTutorialDialog by remember(settings.isFirstTimeSetupCompleted) {
         mutableStateOf(!settings.isFirstTimeSetupCompleted)
     }
@@ -136,6 +139,12 @@ fun HomeScreen(
             snackbarHostState.showSnackbar(it)
             viewModel.clearStatusMessage()
         }
+    }
+
+    if (showDownloadApkDialog) {
+        DownloadApkDialog(
+            onDismiss = { showDownloadApkDialog = false }
+        )
     }
 
     if (showTutorialDialog) {
@@ -230,6 +239,28 @@ fun HomeScreen(
                         }
                     }
 
+                    // Download APK Button
+                    IconButton(
+                        onClick = { showDownloadApkDialog = true },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = "Baixar APK",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
                     // Tutorial Guide Button
                     IconButton(
                         onClick = { showTutorialDialog = true },
@@ -252,7 +283,7 @@ fun HomeScreen(
                         }
                     }
 
-                    // Cloud / Auth Status Button
+                    // Google Login / Account Status Button (Replaced Cloud Icon)
                     IconButton(
                         onClick = { showAuthDialog = true },
                         modifier = Modifier.size(38.dp)
@@ -261,10 +292,10 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(if (currentUser != null) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (currentUser != null) Color(0xFFE8F5E9) else Color(0xFFF1F3F4))
                                 .border(
                                     1.dp,
-                                    if (currentUser != null) Color(0xFFA5D6A7) else MaterialTheme.colorScheme.outline,
+                                    if (currentUser != null) Color(0xFFA5D6A7) else Color(0xFFDADCE0),
                                     CircleShape
                                 ),
                             contentAlignment = Alignment.Center
@@ -276,11 +307,11 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             } else {
-                                Icon(
-                                    imageVector = if (currentUser != null) Icons.Default.CloudDone else Icons.Default.CloudQueue,
-                                    contentDescription = "Conta / Nuvem",
-                                    tint = if (currentUser != null) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(17.dp)
+                                Text(
+                                    text = "G",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 15.sp,
+                                    color = if (currentUser != null) Color(0xFF2E7D32) else Color(0xFF4285F4)
                                 )
                             }
                         }
@@ -337,19 +368,19 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 0. Hero Welcome Card with Universal Elegant Theme
+                // 0. Hero Welcome Card with Universal Elegant Theme (Pure uniform grey background)
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                            containerColor = Color(0xFFF1F3F5)
                         ),
                         border = BorderStroke(
-                            1.5.dp,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                            1.dp,
+                            Color(0xFFE2E4E8)
                         ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -362,10 +393,10 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(52.dp)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                    .background(Color(0xFFE4E7EB))
                                     .border(
-                                        1.5.dp,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                        1.dp,
+                                        Color(0xFFD0D5DD),
                                         RoundedCornerShape(16.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -386,14 +417,14 @@ fun HomeScreen(
                                     text = "Bem-vindo ao $bannerTitle",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 16.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = Color(0xFF212529)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Seu assistente e desbloqueio inteligente de tela.",
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = Color(0xFF6C757D)
                                 )
                             }
                         }

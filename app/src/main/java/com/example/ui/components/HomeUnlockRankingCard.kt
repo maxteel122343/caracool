@@ -153,7 +153,7 @@ fun HomeUnlockRankingCard(
 
                     Column {
                         Text(
-                            text = if (isCuMode) "Ranking Cara de Cu 👾" else "Ranking de Desbloqueios 🏆",
+                            text = if (isCuMode) "Ranking Cara de Cu" else "Ranking de Desbloqueios",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
@@ -592,9 +592,9 @@ private fun CurrentUserRankBanner(
 ) {
     val diffToTop = (top1Count - currentUser.unlockCount + 1).coerceAtLeast(1)
     val bannerText = if (currentUser.rank == 1) {
-        "Parabéns! Você é o #1 do ranking de desbloqueios! 🏆👑"
+        "Parabéns! Você é o #1 do ranking de desbloqueios!"
     } else {
-        "Sua posição: #${currentUser.rank} • Desbloqueie mais $diffToTop vezes para alcançar a liderança! 🚀"
+        "Sua posição: #${currentUser.rank} • Desbloqueie mais $diffToTop vezes para alcançar a liderança!"
     }
 
     Surface(

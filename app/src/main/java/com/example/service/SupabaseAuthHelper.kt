@@ -49,7 +49,7 @@ object SupabaseAuthHelper {
     private const val KEY_CUSTOM_URL = "custom_supabase_url"
     private const val KEY_CUSTOM_KEY = "custom_supabase_key"
 
-    private const val FALLBACK_WEB_CLIENT_ID = "651868925341-ucpjafrvnkf5v1s7igpg0ss0jl920fik.apps.googleusercontent.com"
+    private const val FALLBACK_WEB_CLIENT_ID = "539168851292-h2j12572bub2u0t43g0jc2fnvjjc8m6e.apps.googleusercontent.com"
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

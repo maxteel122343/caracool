@@ -31,6 +31,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
@@ -719,7 +722,7 @@ fun ThemeWallpaperScreen(
                         ) {
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("🔒 Definir no Papel de Parede de Desbloqueio (Lock)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("Definir no Papel de Parede de Desbloqueio (Lock)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -739,7 +742,7 @@ fun ThemeWallpaperScreen(
                         ) {
                             Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("📱 Definir na Tela Inicial (Fundo de Apps)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Definir na Tela Inicial (Fundo de Apps)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -759,7 +762,7 @@ fun ThemeWallpaperScreen(
                         ) {
                             Icon(Icons.Default.Wallpaper, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("🔄 Definir em Ambas as Telas", fontSize = 13.sp)
+                            Text("Definir em Ambas as Telas", fontSize = 13.sp)
                         }
                     }
                 }
@@ -768,7 +771,7 @@ fun ThemeWallpaperScreen(
             // 3. Automações de Desbloqueio, Feed e Slider
             item {
                 Text(
-                    text = "⚡ Automações & Comunidade",
+                    text = "Automações & Comunidade",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -808,9 +811,11 @@ fun ThemeWallpaperScreen(
                                         .background(Color(0xFFFFE0B2), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "⚡",
-                                        fontSize = 22.sp
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = Color(0xFFE65100),
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
 
@@ -848,7 +853,7 @@ fun ThemeWallpaperScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = "Toda vez que desbloquear seu aparelho, sua foto 'Cara de Paçoca' é publicada no feed com a legenda automática 'Olha minha cara de paçoca pela ${todayCount.coerceAtLeast(1)}ª vez! 🥜'.",
+                            text = "Toda vez que desbloquear seu aparelho, sua foto é publicada no feed com a legenda automática 'Olha minha cara de paçoca pela ${todayCount.coerceAtLeast(1)}ª vez!'.",
                             fontSize = 12.sp,
                             lineHeight = 17.sp,
                             color = Color(0xFF6D4C41)
@@ -863,7 +868,7 @@ fun ThemeWallpaperScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.publishManualPost(settings.userProfilePhotoUri ?: settings.userPhotoUri)
-                                    Toast.makeText(context, "Publicando sua Cara de Paçoca no feed! 🥜✨", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Publicando foto no feed!", Toast.LENGTH_SHORT).show()
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 border = BorderStroke(1.dp, Color(0xFFE65100)),
@@ -874,7 +879,7 @@ fun ThemeWallpaperScreen(
                                 modifier = Modifier.testTag("quick_publish_pacoca_btn")
                             ) {
                                 Text(
-                                    text = "Publicar foto atual agora 🥜",
+                                    text = "Publicar foto atual agora",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -917,9 +922,11 @@ fun ThemeWallpaperScreen(
                                         .background(Color(0xFFE1BEE7), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "🔄",
-                                        fontSize = 22.sp
+                                    Icon(
+                                        imageVector = Icons.Default.Sync,
+                                        contentDescription = null,
+                                        tint = Color(0xFF7B1FA2),
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
 
@@ -1274,7 +1281,16 @@ fun ThemeWallpaperScreen(
                                 if (preset.id == "kool") {
                                     TardigradeMascotIcon(size = 24.dp)
                                 } else {
-                                    Text(text = preset.mascotEmoji, fontSize = 22.sp)
+                                    Icon(
+                                        imageVector = when (preset.id) {
+                                            "festivo" -> Icons.Default.Celebration
+                                            "custom_photo" -> Icons.Default.AccountBox
+                                            else -> Icons.Default.ColorLens
+                                        },
+                                        contentDescription = null,
+                                        tint = Color.White.copy(alpha = 0.95f),
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                 }
                             }
 

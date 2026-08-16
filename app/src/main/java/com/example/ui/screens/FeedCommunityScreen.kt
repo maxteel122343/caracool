@@ -1943,10 +1943,19 @@ fun NewPostDialog(
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(if (settings.isCaraDeKoolMode) "👾✨" else "😋🥜", fontSize = 42.sp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                tint = if (settings.isCaraDeKoolMode) Color(0xFFC2185B) else Color(0xFFE65100),
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                if (settings.isCaraDeKoolMode) "Mascote Cara de Cu" else "Mascote Cara de Paçoca",
+                                text = "Selecione ou tire uma foto",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (settings.isCaraDeKoolMode) Color(0xFFC2185B) else Color(0xFFE65100)
