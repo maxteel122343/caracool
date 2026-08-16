@@ -1,0 +1,8 @@
+{
+  "name": "Remix Cara de Paçoca",
+  "description": "App protetor de tela e papel de parede com áudio e voz de IA ao desbloquear, contador diário e temas personalizados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Circle background badge -->
+    <path
+        android:fillColor="#FFFCE4EC"
+        android:pathData="M48,48 m-46,0 a46,46 0 1,0 92,0 a46,46 0 1,0 -92,0 Z" />
+
+    <path
+        android:strokeColor="#FFE8D8D8"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M48,48 m-46,0 a46,46 0 1,0 92,0 a46,46 0 1,0 -92,0 Z" />
+
+    <!-- Cute Chubby Body (Warm Pink Clay) -->
+    <path android:pathData="M26,34 C26,22 70,22 70,34 C70,44 76,54 76,66 C76,80 20,80 20,66 C20,54 26,44 26,34 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="30"
+                android:startY="22"
+                android:endX="66"
+                android:endY="76"
+                android:type="linear">
+                <item android:color="#FFF8BBD0" android:offset="0.0" />
+                <item android:color="#FFF06292" android:offset="0.6" />
+                <item android:color="#FFEC407A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Cute round snout -->
+    <path
+        android:fillColor="#FFFCE4EC"
+        android:pathData="M41,50 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 Z" />
+    <path
+        android:fillColor="#FF880E4F"
+        android:pathData="M45,50 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0 Z" />
+
+    <!-- Eyes -->
+    <path
+        android:fillColor="#FF212121"
+        android:pathData="M33,38 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,36.5 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0 Z" />
+
+    <path
+        android:fillColor="#FF212121"
+        android:pathData="M54,38 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M56,36.5 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0 Z" />
+
+    <!-- Cheeks -->
+    <path
+        android:fillColor="#80FF4081"
+        android:pathData="M27,43 a4,3 0 1,0 8,0 a4,3 0 1,0 -8,0 Z" />
+    <path
+        android:fillColor="#80FF4081"
+        android:pathData="M61,43 a4,3 0 1,0 8,0 a4,3 0 1,0 -8,0 Z" />
+
+    <!-- Lock on chest -->
+    <path
+        android:strokeColor="#FF795548"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M44,61 V58 A4,4 0 0,1 52,58 V61" />
+    <path
+        android:fillColor="#FFFFB300"
+        android:pathData="M41,61 h14 a2,2 0 0,1 2,2 v8 a2,2 0 0,1 -2,2 h-14 a2,2 0 0,1 -2,-2 v-8 a2,2 0 0,1 2,-2 Z" />
+</vector>

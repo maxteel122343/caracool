@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+
+    <!-- Soft outer glow/shadow base -->
+    <path
+        android:fillColor="#1A000000"
+        android:pathData="M32,100 a32,14 0 1,0 64,0 a32,14 0 1,0 -64,0 Z" />
+
+    <!-- Cute Chubby Body (Warm Pink Clay) -->
+    <path android:pathData="M34,42 C34,26 94,26 94,42 C94,56 102,68 102,84 C102,102 26,102 26,84 C26,68 34,56 34,42 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="40"
+                android:startY="28"
+                android:endX="88"
+                android:endY="98"
+                android:type="linear">
+                <item android:color="#FFF8BBD0" android:offset="0.0" />
+                <item android:color="#FFF06292" android:offset="0.6" />
+                <item android:color="#FFEC407A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Head segments & cute rolls -->
+    <path
+        android:fillColor="#FFE91E63"
+        android:pathData="M38,50 Q64,56 90,50 Q64,52 38,50 Z" />
+    <path
+        android:fillColor="#FFE91E63"
+        android:pathData="M32,68 Q64,74 96,68 Q64,70 32,68 Z" />
+
+    <!-- Cute round snout/mouth ring -->
+    <path
+        android:fillColor="#FFFCE4EC"
+        android:pathData="M54,64 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" />
+    <path
+        android:fillColor="#FF880E4F"
+        android:pathData="M59,64 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" />
+
+    <!-- Big Shiny Cute Eyes -->
+    <!-- Left Eye -->
+    <path
+        android:fillColor="#FF212121"
+        android:pathData="M44,48 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M46,46 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M52,50 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0 Z" />
+
+    <!-- Right Eye -->
+    <path
+        android:fillColor="#FF212121"
+        android:pathData="M72,48 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M74,46 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M80,50 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0 Z" />
+
+    <!-- Rosy Cheeks -->
+    <path
+        android:fillColor="#80FF4081"
+        android:pathData="M36,54 a5,4 0 1,0 10,0 a5,4 0 1,0 -10,0 Z" />
+    <path
+        android:fillColor="#80FF4081"
+        android:pathData="M82,54 a5,4 0 1,0 10,0 a5,4 0 1,0 -10,0 Z" />
+
+    <!-- Little Paws / Feet -->
+    <path
+        android:fillColor="#FFF48FB1"
+        android:pathData="M24,78 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+    <path
+        android:fillColor="#FFF48FB1"
+        android:pathData="M88,78 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+    <path
+        android:fillColor="#FFF48FB1"
+        android:pathData="M38,94 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z" />
+    <path
+        android:fillColor="#FFF48FB1"
+        android:pathData="M72,94 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z" />
+
+    <!-- Shiny Gold / Orange Padlock Badge on Chest -->
+    <path
+        android:strokeColor="#FF795548"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M58,78 V74 A6,6 0 0,1 70,74 V78" />
+    <path
+        android:fillColor="#FFFFB300"
+        android:pathData="M54,78 h20 a3,3 0 0,1 3,3 v12 a3,3 0 0,1 -3,3 h-20 a3,3 0 0,1 -3,-3 v-12 a3,3 0 0,1 3,-3 Z" />
+    <path
+        android:fillColor="#FFE65100"
+        android:pathData="M63,83 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0 Z M64,84 v4" />
+</vector>
