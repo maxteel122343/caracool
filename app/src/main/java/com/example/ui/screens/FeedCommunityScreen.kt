@@ -1069,9 +1069,9 @@ fun FeedPostCard(
                         else -> Color(0xFFF57F17)
                     }
                     val syncLabel = when {
-                        isSynced -> "🟢 Foto Sincronizada na Nuvem • Visível aos outros"
+                        isSynced -> "🟢 Foto Sincronizada no Supabase • Visível aos outros"
                         isFailed -> "🔴 Falha no envio • Toque p/ ver log & reenviar"
-                        else -> "⏳ Enviando foto para o Firestore..."
+                        else -> "⏳ Enviando foto para o Supabase..."
                     }
 
                     Surface(
@@ -1115,7 +1115,7 @@ fun FeedPostCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "☁️ Recebido da Comunidade via Nuvem Firestore",
+                                text = "☁️ Recebido da Comunidade via Supabase",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF1565C0)

@@ -171,16 +171,120 @@ fun SyncLogViewerDialog(
                                 fontSize = 17.sp,
                                 color = SoftTextPrimary
                             )
+                            val isSupabaseOk = com.example.service.SupabaseAuthHelper.isConfigured(context)
                             Text(
-                                text = if (health.isGuestUser) "Modo Convidado • Firestore Conectado" else "Usuário Autenticado • Firestore Ativo",
+                                text = if (isSupabaseOk) {
+                                    if (health.isGuestUser) "Modo Convidado • Supabase Conectado" else "Usuário Autenticado • Supabase Ativo"
+                                } else {
+                                    "Modo Local • Chaves Supabase Pendentes"
+                                },
                                 fontSize = 12.sp,
-                                color = SoftTextSecondary
+                                color = if (isSupabaseOk) SoftTextSecondary else Color(0xFFE65100)
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.testTag("btn_close_sync_dialog")) {
                         Text("✕", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SoftTextSecondary)
+                    }
+                }
+
+                // Banner when Supabase credentials are not yet configured
+                var showConfigFields by remember { mutableStateOf(false) }
+                var inputUrl by remember { mutableStateOf(com.example.service.SupabaseAuthHelper.getSupabaseUrl(context).takeIf { !it.contains("placeholder") && !it.contains("your-project") } ?: "") }
+                var inputKey by remember { mutableStateOf(com.example.service.SupabaseAuthHelper.getSupabaseAnonKey(context).takeIf { !it.contains("placeholder") && !it.contains("your-anon-key") } ?: "") }
+                val isCurrentlyConfigured = com.example.service.SupabaseAuthHelper.isConfigured(context)
+
+                if (!isCurrentlyConfigured || showConfigFields) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = if (isCurrentlyConfigured) Color(0xFFF1F8E9) else Color(0xFFFFF3E0)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = if (isCurrentlyConfigured) "⚡ Supabase Conectado" else "🔑 Configuração do Supabase",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = if (isCurrentlyConfigured) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                )
+                                Text(
+                                    text = if (showConfigFields) "Fechar ▲" else "Configurar ▼",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SoftRosePrimary,
+                                    modifier = Modifier.clickable { showConfigFields = !showConfigFields }
+                                )
+                            }
+                            if (!isCurrentlyConfigured && !showConfigFields) {
+                                Text(
+                                    text = "Toque em 'Configurar' para inserir sua URL e Anon Key do Supabase ou adicione no painel Secrets (.env).",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF5D4037),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                            if (showConfigFields) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                androidx.compose.material3.OutlinedTextField(
+                                    value = inputUrl,
+                                    onValueChange = { inputUrl = it },
+                                    label = { Text("SUPABASE_URL (ex: https://xyz.supabase.co)", fontSize = 11.sp) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                androidx.compose.material3.OutlinedTextField(
+                                    value = inputKey,
+                                    onValueChange = { inputKey = it },
+                                    label = { Text("SUPABASE_ANON_KEY (chave pública anon)", fontSize = 11.sp) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    if (isCurrentlyConfigured) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                com.example.service.SupabaseAuthHelper.clearCustomConfig(context)
+                                                inputUrl = ""
+                                                inputKey = ""
+                                                Toast.makeText(context, "Configurações restauradas", Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        ) {
+                                            Text("Restaurar", fontSize = 11.sp)
+                                        }
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (inputUrl.isNotBlank() && inputKey.isNotBlank()) {
+                                                com.example.service.SupabaseAuthHelper.saveCustomConfig(context, inputUrl, inputKey)
+                                                Toast.makeText(context, "Supabase configurado com sucesso! Sincronizando...", Toast.LENGTH_SHORT).show()
+                                                showConfigFields = false
+                                                viewModel.forceSyncAll()
+                                            } else {
+                                                Toast.makeText(context, "Preencha a URL e a Chave Anon!", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = SoftRosePrimary)
+                                    ) {
+                                        Text("Salvar & Conectar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

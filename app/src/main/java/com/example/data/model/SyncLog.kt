@@ -13,9 +13,9 @@ enum class SyncLogLevel {
 enum class SyncCategory {
     PHOTO_SYNC,        // Sincronização de fotos / upload de mídia
     FEED_PROPAGATION,  // Confirmação de recebimento por outros usuários no feed
-    REALTIME_STREAM,   // Listener em tempo real do Firestore
+    REALTIME_STREAM,   // Listener em tempo real / polling do Supabase
     ERROR_DIAGNOSTIC,  // Erros de rede, permissões, exceções
-    AUTH_CLOUD,        // Autenticação, UID e modo convidado
+    AUTH_CLOUD,        // Autenticação Supabase, UID e modo convidado
     SYSTEM_DIAGNOSTIC  // Testes de integridade do sistema
 }
 
@@ -38,7 +38,8 @@ data class SyncLog(
 
 data class SyncHealthStatus(
     val isOnline: Boolean = true,
-    val isFirestoreConnected: Boolean = true,
+    val isFirestoreConnected: Boolean = true, // Supabase cloud connected
+    val isSupabaseConnected: Boolean = true,
     val realtimeListenerActive: Boolean = false,
     val activeUserId: String = "",
     val isGuestUser: Boolean = true,

@@ -46,6 +46,8 @@ object SupabaseAuthHelper {
     private const val KEY_USER_EMAIL = "user_email"
     private const val KEY_USER_NAME = "user_name"
     private const val KEY_USER_PHOTO = "user_photo"
+    private const val KEY_CUSTOM_URL = "custom_supabase_url"
+    private const val KEY_CUSTOM_KEY = "custom_supabase_key"
 
     private const val FALLBACK_WEB_CLIENT_ID = "651868925341-ucpjafrvnkf5v1s7igpg0ss0jl920fik.apps.googleusercontent.com"
 
@@ -62,7 +64,14 @@ object SupabaseAuthHelper {
     private val _currentUser = MutableStateFlow<SupabaseUser?>(null)
     val currentUser: StateFlow<SupabaseUser?> = _currentUser.asStateFlow()
 
-    fun getSupabaseUrl(): String {
+    fun getSupabaseUrl(context: Context? = null): String {
+        val targetContext = context ?: appContext
+        val customUrl = targetContext?.getSharedPreferences(PREFS_AUTH, Context.MODE_PRIVATE)
+            ?.getString(KEY_CUSTOM_URL, null)?.trim()?.removeSuffix("/")
+        if (!customUrl.isNullOrBlank() && !customUrl.contains("your-project") && !customUrl.contains("placeholder-project")) {
+            return customUrl
+        }
+
         val url = try {
             val fromConfig = BuildConfig::class.java.getField("SUPABASE_URL").get(null) as? String
             fromConfig?.trim()?.removeSuffix("/") ?: ""
@@ -76,7 +85,14 @@ object SupabaseAuthHelper {
         }
     }
 
-    fun getSupabaseAnonKey(): String {
+    fun getSupabaseAnonKey(context: Context? = null): String {
+        val targetContext = context ?: appContext
+        val customKey = targetContext?.getSharedPreferences(PREFS_AUTH, Context.MODE_PRIVATE)
+            ?.getString(KEY_CUSTOM_KEY, null)?.trim()
+        if (!customKey.isNullOrBlank() && customKey != "your-anon-key" && customKey != "placeholder-anon-key") {
+            return customKey
+        }
+
         return try {
             val fromConfig = BuildConfig::class.java.getField("SUPABASE_ANON_KEY").get(null) as? String
                 ?: BuildConfig::class.java.getField("SUPABASE_KEY").get(null) as? String
@@ -87,11 +103,27 @@ object SupabaseAuthHelper {
         }
     }
 
-    fun isConfigured(): Boolean {
-        val url = getSupabaseUrl()
-        val key = getSupabaseAnonKey()
+    fun isConfigured(context: Context? = null): Boolean {
+        val url = getSupabaseUrl(context)
+        val key = getSupabaseAnonKey(context)
         return url.isNotBlank() && !url.contains("your-project") && !url.contains("placeholder-project") &&
                 key.isNotBlank() && key != "your-anon-key" && key != "placeholder-anon-key"
+    }
+
+    fun saveCustomConfig(context: Context, url: String, anonKey: String) {
+        val prefs = context.getSharedPreferences(PREFS_AUTH, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString(KEY_CUSTOM_URL, url.trim().removeSuffix("/"))
+            .putString(KEY_CUSTOM_KEY, anonKey.trim())
+            .apply()
+    }
+
+    fun clearCustomConfig(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_AUTH, Context.MODE_PRIVATE)
+        prefs.edit()
+            .remove(KEY_CUSTOM_URL)
+            .remove(KEY_CUSTOM_KEY)
+            .apply()
     }
 
     private var appContext: Context? = null
