@@ -94,7 +94,21 @@ CREATE TABLE IF NOT EXISTS public.unlock_logs (
     "created_at" TIMESTAMPTZ DEFAULT now()
 );
 
--- 7. TABELA DE PROBES DE TESTE / DIAGNÓSTICO
+-- 7. TABELA DE NOTIFICAÇÕES EM TEMPO REAL (CURTIDAS, COMENTÁRIOS, PAPEL DE PAREDE)
+CREATE TABLE IF NOT EXISTS public.community_notifications (
+    "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "recipientUserId" TEXT NOT NULL,
+    "senderUserId" TEXT NOT NULL,
+    "senderName" TEXT NOT NULL DEFAULT 'Alguém',
+    "type" TEXT NOT NULL, -- 'LIKE', 'COMMENT', 'WALLPAPER'
+    "message" TEXT NOT NULL,
+    "spokenVoicePhrase" TEXT,
+    "isRead" BOOLEAN DEFAULT false,
+    "timestamp" BIGINT NOT NULL DEFAULT (EXTRACT(epoch FROM now()) * 1000)::BIGINT,
+    "created_at" TIMESTAMPTZ DEFAULT now()
+);
+
+-- 8. TABELA DE PROBES DE TESTE / DIAGNÓSTICO
 CREATE TABLE IF NOT EXISTS public.system_probes (
     "id" BIGINT PRIMARY KEY,
     "userId" TEXT,
@@ -111,6 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_posts_timestamp ON public.community_posts("timest
 CREATE INDEX IF NOT EXISTS idx_comments_post_time ON public.community_comments("postId", "timestamp" ASC);
 CREATE INDEX IF NOT EXISTS idx_rankings_unlocks ON public.community_rankings("unlockCount" DESC);
 CREATE INDEX IF NOT EXISTS idx_unlock_logs_user_date ON public.unlock_logs("userId", "dateString");
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON public.community_notifications("recipientUserId", "isRead", "timestamp" ASC);
 
 -- HABILITAR ROW LEVEL SECURITY (RLS)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -119,6 +134,7 @@ ALTER TABLE public.community_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_rankings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.unlock_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_probes ENABLE ROW LEVEL SECURITY;
 
 -- POLÍTICAS DE ACESSO LIVRE (PÚBLICO / ANON / AUTHENTICATED) PARA O APP MOBILE
@@ -152,6 +168,11 @@ DROP POLICY IF EXISTS "Public read unlock_logs" ON public.unlock_logs;
 CREATE POLICY "Public read unlock_logs" ON public.unlock_logs FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public write unlock_logs" ON public.unlock_logs FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Public read notifications" ON public.community_notifications;
+CREATE POLICY "Public read notifications" ON public.community_notifications FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public write notifications" ON public.community_notifications;
+CREATE POLICY "Public write notifications" ON public.community_notifications FOR ALL USING (true);
+
 DROP POLICY IF EXISTS "Public write probes" ON public.system_probes;
 CREATE POLICY "Public write probes" ON public.system_probes FOR ALL USING (true);
 
@@ -162,6 +183,7 @@ BEGIN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.community_posts;
         ALTER PUBLICATION supabase_realtime ADD TABLE public.community_comments;
         ALTER PUBLICATION supabase_realtime ADD TABLE public.community_rankings;
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.community_notifications;
     END IF;
 EXCEPTION WHEN OTHERS THEN
     -- Realtime table publication already added or not supported in local schema

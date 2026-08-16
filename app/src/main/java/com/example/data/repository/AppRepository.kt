@@ -326,6 +326,7 @@ class AppRepository(
         userProfilePhotoUri: String?
     ) {
         val current = getSettings()
+        val oldName = current.userName
         val updated = current.copy(
             userName = userName.ifBlank { "Você (Cara de Paçoca)" },
             userAvatarEmoji = userAvatarEmoji.ifBlank { "🥜" },
@@ -336,6 +337,21 @@ class AppRepository(
             selectedThemeId = if (userProfilePhotoUri != null) "custom_photo" else current.selectedThemeId
         )
         updateSettings(updated)
+
+        // Update existing user posts and comments in local database
+        try {
+            feedDao.updateUserPostsAuthorInfo(
+                newName = updated.userName,
+                newEmoji = updated.userAvatarEmoji,
+                newAvatarUri = updated.userProfilePhotoUri
+            )
+            feedDao.updateCommentsAuthorInfo(
+                oldName = oldName,
+                newName = updated.userName,
+                newEmoji = updated.userAvatarEmoji,
+                newAvatarUri = updated.userProfilePhotoUri
+            )
+        } catch (_: Exception) {}
 
         if (context != null) {
             try {
@@ -352,6 +368,12 @@ class AppRepository(
 
     suspend fun deletePost(postId: Long) {
         feedDao.deletePost(postId)
+        feedDao.deleteCommentsForPost(postId)
+        if (context != null) {
+            try {
+                SupabaseSyncService.syncDeletePost(context, postId)
+            } catch (_: Exception) {}
+        }
     }
 
     suspend fun cleanOldUserPosts24h(): Int {
@@ -359,6 +381,11 @@ class AppRepository(
         val deletedCount = feedDao.deleteUserPostsOlderThan(cutoff)
         if (deletedCount > 0) {
             feedDao.deleteOrphanedComments()
+        }
+        if (context != null) {
+            try {
+                SupabaseSyncService.syncDeleteOldPosts24h(context, cutoff)
+            } catch (_: Exception) {}
         }
         return deletedCount
     }

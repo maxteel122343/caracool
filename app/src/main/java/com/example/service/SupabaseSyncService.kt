@@ -38,6 +38,9 @@ object SupabaseSyncService {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var realtimeJob: Job? = null
 
+    // Cache of postId -> authorUserId to know whom to notify
+    private val postAuthorUserIds = java.util.concurrent.ConcurrentHashMap<Long, String>()
+
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -159,11 +162,13 @@ object SupabaseSyncService {
                                 onNewPostsReceived?.invoke(count)
                             }
                         }
+                        // Poll unread notifications and speak them out loud!
+                        fetchAndProcessUnreadNotifications(context, currentUserId)
                     }
                 } catch (e: Exception) {
                     Log.w(TAG, "Error in realtime sync poll: ${e.message}")
                 }
-                delay(15000) // Poll every 15 seconds
+                delay(12000) // Poll every 12 seconds
             }
         }
     }
@@ -200,10 +205,18 @@ object SupabaseSyncService {
             val feedDao = db.feedDao()
             val myEffectiveId = currentUserId ?: getEffectiveUserId(context)
 
+            val serverPostIds = mutableListOf<Long>()
             var newCount = 0
+
             for (p in postList) {
                 val postId = (p["id"] as? Number)?.toLong() ?: continue
+                serverPostIds.add(postId)
+
                 val postUserId = p["userId"] as? String ?: ""
+                if (postUserId.isNotBlank()) {
+                    postAuthorUserIds[postId] = postUserId
+                }
+
                 val isMine = postUserId.isNotBlank() && postUserId == myEffectiveId
 
                 val existing = feedDao.getPostById(postId)
@@ -212,6 +225,38 @@ object SupabaseSyncService {
                     saveBase64ToLocalCache(context, postId, base64)
                 } else {
                     existing?.photoUri ?: p["photoUri"] as? String
+                }
+
+                val remoteLikes = (p["likesCount"] as? Number)?.toInt() ?: 0
+                val remoteComments = (p["commentsCount"] as? Number)?.toInt() ?: 0
+                val remoteWallpaperCount = (p["wallpaperSetCount"] as? Number)?.toInt() ?: 0
+
+                // Audio / TTS notification fallback on own post interactions:
+                if (isMine && existing != null) {
+                    if (remoteLikes > existing.likesCount) {
+                        NotificationHelper.sendSocialNotificationWithVoice(
+                            context = context,
+                            title = "Nova curtida no seu post!",
+                            message = "Alguém curtiu sua foto na comunidade!",
+                            spokenVoicePhrase = "Alguém acabou de curtir a sua foto no Cara de Cu!"
+                        )
+                    }
+                    if (remoteComments > existing.commentsCount) {
+                        NotificationHelper.sendSocialNotificationWithVoice(
+                            context = context,
+                            title = "Novo comentário!",
+                            message = "Alguém comentou na sua foto!",
+                            spokenVoicePhrase = "Olha só, alguém acabou de comentar na sua foto!"
+                        )
+                    }
+                    if (remoteWallpaperCount > existing.wallpaperSetCount) {
+                        NotificationHelper.sendSocialNotificationWithVoice(
+                            context = context,
+                            title = "Papel de Parede Utilizado!",
+                            message = "Alguém definiu sua foto como papel de parede!",
+                            spokenVoicePhrase = "Atenção! Alguém acabou de definir sua foto como papel de parede!"
+                        )
+                    }
                 }
 
                 val feedPost = FeedPost(
@@ -224,7 +269,7 @@ object SupabaseSyncService {
                     caption = p["caption"] as? String ?: "",
                     unlockCount = (p["unlockCount"] as? Number)?.toInt() ?: 1,
                     timestamp = (p["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis(),
-                    likesCount = (p["likesCount"] as? Number)?.toInt() ?: 0,
+                    likesCount = remoteLikes,
                     loveCount = (p["loveCount"] as? Number)?.toInt() ?: 0,
                     laughCount = (p["laughCount"] as? Number)?.toInt() ?: 0,
                     pacocaCount = (p["pacocaCount"] as? Number)?.toInt() ?: 0,
@@ -234,8 +279,8 @@ object SupabaseSyncService {
                     myReactionEmoji = existing?.myReactionEmoji,
                     themeTag = p["themeTag"] as? String ?: "Original",
                     isUserPost = isMine || (existing?.isUserPost ?: false),
-                    commentsCount = (p["commentsCount"] as? Number)?.toInt() ?: 0,
-                    wallpaperSetCount = (p["wallpaperSetCount"] as? Number)?.toInt() ?: 0,
+                    commentsCount = remoteComments,
+                    wallpaperSetCount = remoteWallpaperCount,
                     isWallpaperUsedByMe = existing?.isWallpaperUsedByMe ?: false,
                     recentLikersSummary = existing?.recentLikersSummary ?: "",
                     recentWallpaperUsersSummary = existing?.recentWallpaperUsersSummary ?: ""
@@ -245,6 +290,11 @@ object SupabaseSyncService {
                 if (existing == null && !isMine) {
                     newCount++
                 }
+            }
+
+            // Remove deleted remote posts from local database so they vanish from the feed
+            if (serverPostIds.isNotEmpty()) {
+                feedDao.deleteRemotePostsNotIn(serverPostIds)
             }
 
             // Also fetch comments
@@ -282,7 +332,7 @@ object SupabaseSyncService {
                     val feedComment = FeedComment(
                         id = commentId,
                         postId = postId,
-                        authorName = c["authorName"] as? String ?: "Amigo Paçoca",
+                        authorName = c["authorName"] as? String ?: "Amigo",
                         authorAvatarEmoji = c["authorAvatarEmoji"] as? String ?: "🥜",
                         authorAvatarUri = c["authorAvatarUri"] as? String,
                         text = c["text"] as? String ?: "",
@@ -293,6 +343,89 @@ object SupabaseSyncService {
             }
         } catch (e: Exception) {
             Log.w(TAG, "Comments sync error: ${e.message}")
+        }
+    }
+
+    suspend fun fetchAndProcessUnreadNotifications(context: Context, myEffectiveId: String) = withContext(Dispatchers.IO) {
+        if (!SupabaseAuthHelper.isConfigured()) return@withContext
+        try {
+            val url = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_notifications?recipientUserId=eq.$myEffectiveId&isRead=eq.false&order=timestamp.asc&limit=20"
+            val headers = getAuthHeaders()
+            val reqBuilder = Request.Builder().url(url)
+            headers.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
+
+            val response = httpClient.newCall(reqBuilder.build()).execute()
+            val responseBody = response.body?.string() ?: ""
+
+            if (response.isSuccessful) {
+                val listType = Types.newParameterizedType(List::class.java, Map::class.java)
+                val adapter = moshi.adapter<List<Map<String, Any?>>>(listType)
+                val notifList = adapter.fromJson(responseBody) ?: emptyList()
+
+                for (n in notifList) {
+                    val notifId = (n["id"] as? Number)?.toLong() ?: continue
+                    val senderName = n["senderName"] as? String ?: "Alguém"
+                    val message = n["message"] as? String ?: "Nova interação na sua foto!"
+                    val spokenPhrase = n["spokenVoicePhrase"] as? String ?: message
+
+                    NotificationHelper.sendSocialNotificationWithVoice(
+                        context = context,
+                        title = "Interação de $senderName",
+                        message = message,
+                        spokenVoicePhrase = spokenPhrase
+                    )
+
+                    // Mark as read in Supabase
+                    try {
+                        val patchUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_notifications?id=eq.$notifId"
+                        val patchReq = Request.Builder()
+                            .url(patchUrl)
+                            .patch("{\"isRead\": true}".toRequestBody(jsonMediaType))
+                        getAuthHeaders().forEach { (k, v) -> patchReq.addHeader(k, v) }
+                        httpClient.newCall(patchReq.build()).execute()
+                    } catch (_: Exception) {}
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Notifications poll error: ${e.message}")
+        }
+    }
+
+    suspend fun sendRemoteNotification(
+        recipientUserId: String,
+        senderUserId: String,
+        senderName: String,
+        type: String,
+        message: String,
+        spokenVoicePhrase: String
+    ) = withContext(Dispatchers.IO) {
+        if (!SupabaseAuthHelper.isConfigured()) return@withContext
+        if (recipientUserId.isBlank() || recipientUserId == senderUserId) return@withContext
+
+        try {
+            val url = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_notifications"
+            val notifBody = mapOf(
+                "recipientUserId" to recipientUserId,
+                "senderUserId" to senderUserId,
+                "senderName" to senderName,
+                "type" to type,
+                "message" to message,
+                "spokenVoicePhrase" to spokenVoicePhrase,
+                "timestamp" to System.currentTimeMillis(),
+                "isRead" to false
+            )
+
+            val adapter = moshi.adapter<Map<String, Any?>>(Map::class.java)
+            val json = adapter.toJson(notifBody)
+
+            val req = Request.Builder()
+                .url(url)
+                .addHeader("Prefer", "resolution=merge-duplicates")
+                .post(json.toRequestBody(jsonMediaType))
+            getAuthHeaders().forEach { (k, v) -> req.addHeader(k, v) }
+            httpClient.newCall(req.build()).execute()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error sending remote notification: ${e.message}")
         }
     }
 
@@ -390,8 +523,94 @@ object SupabaseSyncService {
 
             getAuthHeaders().forEach { (k, v) -> reqBuilder.addHeader(k, v) }
             httpClient.newCall(reqBuilder.build()).execute()
+
+            // Update authorName and avatar across all previous posts in Supabase
+            try {
+                val postsPatchUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_posts?userId=eq.$effectiveUserId"
+                val postsPatchMap = mapOf(
+                    "authorName" to userName,
+                    "authorAvatarEmoji" to userAvatarEmoji,
+                    "authorAvatarUri" to photoUri
+                )
+                val postsJson = adapter.toJson(postsPatchMap)
+                val postsReq = Request.Builder()
+                    .url(postsPatchUrl)
+                    .patch(postsJson.toRequestBody(jsonMediaType))
+                getAuthHeaders().forEach { (k, v) -> postsReq.addHeader(k, v) }
+                httpClient.newCall(postsReq.build()).execute()
+            } catch (_: Exception) {}
+
+            // Update authorName across comments in Supabase
+            try {
+                val commentsPatchUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_comments?userId=eq.$effectiveUserId"
+                val commentsPatchMap = mapOf(
+                    "authorName" to userName,
+                    "authorAvatarEmoji" to userAvatarEmoji,
+                    "authorAvatarUri" to photoUri
+                )
+                val commentsJson = adapter.toJson(commentsPatchMap)
+                val commentsReq = Request.Builder()
+                    .url(commentsPatchUrl)
+                    .patch(commentsJson.toRequestBody(jsonMediaType))
+                getAuthHeaders().forEach { (k, v) -> commentsReq.addHeader(k, v) }
+                httpClient.newCall(commentsReq.build()).execute()
+            } catch (_: Exception) {}
+
+            // Update name in rankings
+            try {
+                val rankPatchUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_rankings?userId=eq.$effectiveUserId"
+                val rankPatchMap = mapOf(
+                    "name" to userName,
+                    "avatarEmoji" to userAvatarEmoji,
+                    "photoUri" to photoUri
+                )
+                val rankJson = adapter.toJson(rankPatchMap)
+                val rankReq = Request.Builder()
+                    .url(rankPatchUrl)
+                    .patch(rankJson.toRequestBody(jsonMediaType))
+                getAuthHeaders().forEach { (k, v) -> rankReq.addHeader(k, v) }
+                httpClient.newCall(rankReq.build()).execute()
+            } catch (_: Exception) {}
+
         } catch (e: Exception) {
             Log.w(TAG, "Could not sync profile to Supabase: ${e.message}")
+        }
+    }
+
+    suspend fun syncDeletePost(context: Context, postId: Long) = withContext(Dispatchers.IO) {
+        if (!SupabaseAuthHelper.isConfigured()) return@withContext
+        try {
+            val url = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_posts?id=eq.$postId"
+            val req = Request.Builder().url(url).delete()
+            getAuthHeaders().forEach { (k, v) -> req.addHeader(k, v) }
+            httpClient.newCall(req.build()).execute()
+
+            // Delete associated comments
+            val commentsUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_comments?postId=eq.$postId"
+            val cReq = Request.Builder().url(commentsUrl).delete()
+            getAuthHeaders().forEach { (k, v) -> cReq.addHeader(k, v) }
+            httpClient.newCall(cReq.build()).execute()
+
+            // Delete associated reactions
+            val reactionsUrl = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_reactions?postId=eq.$postId"
+            val rReq = Request.Builder().url(reactionsUrl).delete()
+            getAuthHeaders().forEach { (k, v) -> rReq.addHeader(k, v) }
+            httpClient.newCall(rReq.build()).execute()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting post from Supabase: ${e.message}")
+        }
+    }
+
+    suspend fun syncDeleteOldPosts24h(context: Context, cutoffTimestamp: Long, userId: String? = null) = withContext(Dispatchers.IO) {
+        if (!SupabaseAuthHelper.isConfigured()) return@withContext
+        try {
+            val effectiveUserId = userId ?: getEffectiveUserId(context)
+            val url = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_posts?userId=eq.$effectiveUserId&timestamp=lt.$cutoffTimestamp"
+            val req = Request.Builder().url(url).delete()
+            getAuthHeaders().forEach { (k, v) -> req.addHeader(k, v) }
+            httpClient.newCall(req.build()).execute()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting old posts from Supabase: ${e.message}")
         }
     }
 
@@ -438,6 +657,7 @@ object SupabaseSyncService {
 
         try {
             val effectiveUserId = userId ?: getEffectiveUserId(context)
+            postAuthorUserIds[post.id] = effectiveUserId
             val photoBase64 = encodePhotoToBase64(context, post.photoUri)
 
             val url = "${SupabaseAuthHelper.getSupabaseUrl()}/rest/v1/community_posts"
@@ -519,6 +739,19 @@ object SupabaseSyncService {
 
             getAuthHeaders().forEach { (k, v) -> reqBuilder.addHeader(k, v) }
             httpClient.newCall(reqBuilder.build()).execute()
+
+            // Send notification to author of post
+            val recipientUserId = postAuthorUserIds[postId]
+            if (recipientUserId != null && recipientUserId != effectiveUserId) {
+                sendRemoteNotification(
+                    recipientUserId = recipientUserId,
+                    senderUserId = effectiveUserId,
+                    senderName = authorName,
+                    type = "COMMENT",
+                    message = "$authorName comentou: \"$commentText\"",
+                    spokenVoicePhrase = "Novo comentário de $authorName: $commentText"
+                )
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Could not sync comment to Supabase: ${e.message}", e)
         }
@@ -579,6 +812,19 @@ object SupabaseSyncService {
 
             getAuthHeaders().forEach { (k, v) -> rReq.addHeader(k, v) }
             httpClient.newCall(rReq.build()).execute()
+
+            // Send notification to author of post
+            val recipientUserId = postAuthorUserIds[postId]
+            if (recipientUserId != null && recipientUserId != effectiveUserId) {
+                sendRemoteNotification(
+                    recipientUserId = recipientUserId,
+                    senderUserId = effectiveUserId,
+                    senderName = userName,
+                    type = "LIKE",
+                    message = "$userName curtiu sua foto!",
+                    spokenVoicePhrase = "Atenção! $userName acabou de curtir a sua foto no feed!"
+                )
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Could not sync post like to Supabase: ${e.message}", e)
         }
@@ -604,6 +850,20 @@ object SupabaseSyncService {
 
             getAuthHeaders().forEach { (k, v) -> reqBuilder.addHeader(k, v) }
             httpClient.newCall(reqBuilder.build()).execute()
+
+            // Send notification to author of post
+            val effectiveUserId = userId ?: getEffectiveUserId(context)
+            val recipientUserId = postAuthorUserIds[postId]
+            if (recipientUserId != null && recipientUserId != effectiveUserId) {
+                sendRemoteNotification(
+                    recipientUserId = recipientUserId,
+                    senderUserId = effectiveUserId,
+                    senderName = userName,
+                    type = "WALLPAPER",
+                    message = "$userName definiu sua foto como papel de parede!",
+                    spokenVoicePhrase = "Olha só! $userName acabou de definir sua foto como papel de parede!"
+                )
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Could not sync wallpaper usage to Supabase: ${e.message}")
         }

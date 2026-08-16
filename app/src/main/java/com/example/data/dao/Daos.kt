@@ -76,6 +76,18 @@ interface FeedDao {
     @Query("DELETE FROM feed_posts WHERE id = :postId")
     suspend fun deletePost(postId: Long)
 
+    @Query("DELETE FROM feed_comments WHERE postId = :postId")
+    suspend fun deleteCommentsForPost(postId: Long)
+
+    @Query("UPDATE feed_posts SET authorName = :newName, authorAvatarEmoji = :newEmoji, authorAvatarUri = :newAvatarUri WHERE isUserPost = 1")
+    suspend fun updateUserPostsAuthorInfo(newName: String, newEmoji: String, newAvatarUri: String?)
+
+    @Query("UPDATE feed_comments SET authorName = :newName, authorAvatarEmoji = :newEmoji, authorAvatarUri = :newAvatarUri WHERE authorName = :oldName")
+    suspend fun updateCommentsAuthorInfo(oldName: String, newName: String, newEmoji: String, newAvatarUri: String?)
+
+    @Query("DELETE FROM feed_posts WHERE isUserPost = 0 AND id NOT IN (:validIds)")
+    suspend fun deleteRemotePostsNotIn(validIds: List<Long>)
+
     @Query("DELETE FROM feed_posts WHERE id IN (101, 102, 103, 104) OR presetImageKey LIKE 'preset_%' OR authorName IN ('Mariana Paçoca', 'Lucas Gamer', 'Lucas Paçoca', 'Beatriz Kawaii', 'Beatriz Paçoca', 'Camila Tardígrado', 'Gabriel Paçoca')")
     suspend fun deletePresetFakePosts()
 

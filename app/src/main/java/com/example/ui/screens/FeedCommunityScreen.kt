@@ -246,7 +246,7 @@ fun FeedCommunityScreen(
                 }
 
                 Text(
-                    text = "Atualizado agora 🟢",
+                    text = "Atualizado agora",
                     fontSize = 11.sp,
                     color = Color(0xFF2E7D32),
                     fontWeight = FontWeight.Medium
@@ -1053,32 +1053,14 @@ fun FeedPostCard(
                     )
                 }
 
-                // Sync Delivery Status Tag / Diagnostic Indicator
-                Spacer(modifier = Modifier.height(6.dp))
-                if (post.isUserPost) {
-                    val isSynced = post.syncStatus == "SYNCED"
-                    val isFailed = post.syncStatus == "FAILED"
-                    val syncBg = when {
-                        isSynced -> Color(0xFFE8F5E9)
-                        isFailed -> Color(0xFFFFEBEE)
-                        else -> Color(0xFFFFF8E1)
-                    }
-                    val syncColor = when {
-                        isSynced -> Color(0xFF2E7D32)
-                        isFailed -> Color(0xFFD32F2F)
-                        else -> Color(0xFFF57F17)
-                    }
-                    val syncLabel = when {
-                        isSynced -> "🟢 Foto Sincronizada no Supabase • Visível aos outros"
-                        isFailed -> "🔴 Falha no envio • Toque p/ ver log & reenviar"
-                        else -> "⏳ Enviando foto para o Supabase..."
-                    }
-
+                // Failure diagnostic retry tag (only shown if post sync actually failed)
+                if (post.isUserPost && post.syncStatus == "FAILED") {
+                    Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         onClick = onOpenSyncLogs,
                         shape = RoundedCornerShape(8.dp),
-                        color = syncBg,
-                        border = BorderStroke(1.dp, syncColor.copy(alpha = 0.4f)),
+                        color = Color(0xFFFFEBEE),
+                        border = BorderStroke(1.dp, Color(0xFFD32F2F).copy(alpha = 0.4f)),
                         modifier = Modifier.clip(RoundedCornerShape(8.dp))
                     ) {
                         Row(
@@ -1086,39 +1068,17 @@ fun FeedPostCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = syncLabel,
+                                text = "Falha no envio • Toque p/ ver log",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = syncColor
+                                color = Color(0xFFD32F2F)
                             )
-                            if (isFailed) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Reenviar ↺",
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFFB71C1C)
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Surface(
-                        onClick = onOpenSyncLogs,
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFE3F2FD),
-                        border = BorderStroke(1.dp, Color(0xFF90CAF9)),
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "☁️ Recebido da Comunidade via Supabase",
+                                text = "Reenviar ↺",
                                 fontSize = 10.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF1565C0)
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFB71C1C)
                             )
                         }
                     }
